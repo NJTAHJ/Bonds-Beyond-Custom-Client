@@ -93,10 +93,7 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
     const setFieldOffset = useGameUIStates((state) => state.setFieldOffset);
     const setOpponentFieldOffset = useGameUIStates((state) => state.setOpponentFieldOffset);
 
-    const p1 = gameId.split("‗")[0];
-    const p2 = gameId.split("‗")[1];
-    const opponentName = p1 === user ? p2 : p1;
-    const myName = user;
+    const opponentName = gameId.split("‗").filter((username) => username !== user)[0];
 
     const playCoinFlipSfx = useSound((state) => state.playCoinFlipSfx);
     const playButtonClickSfx = useSound((state) => state.playButtonClickSfx);
@@ -104,7 +101,7 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
     const playNextPhaseSfx = useSound((state) => state.playNextPhaseSfx);
     const playOpponentPlaceCardSfx = useSound((state) => state.playOpponentPlaceCardSfx);
     const playPassTurnSfx = useSound((state) => state.playPassTurnSfx);
-    const playRevealSfx = useSound((state) => state.playRevealCardSfx);
+    const playRevealCardSfx = useSound((state) => state.playRevealCardSfx);
     const playSecurityRevealSfx = useSound((state) => state.playSecurityRevealSfx);
     const playShuffleDeckSfx = useSound((state) => state.playShuffleDeckSfx);
     const playSuspendSfx = useSound((state) => state.playSuspendSfx);
@@ -137,8 +134,20 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
 
             if (event.data.startsWith("[DISTRIBUTE_CARDS]:")) {
                 const gameStateJson = event.data.substring("[DISTRIBUTE_CARDS]:".length);
-                distributeCards(myName, gameStateJson, playDrawCardSfx);
+                distributeCards(user, gameStateJson, playDrawCardSfx);
                 setOpenedCardDialog(false);
+                return;
+            }
+
+            if (event.data.startsWith("[BOARD_STATE]:")) {
+                const boardStateJson = event.data.substring("[BOARD_STATE]:".length);
+                distributeCards(user, boardStateJson, () => undefined);
+                setOpenedCardDialog(false);
+                return;
+            }
+
+            if (event.data.startsWith("[COMMAND_REJECTED]:")) {
+                notifyInfo("A game action could not be applied. Your board is being resynchronized.");
                 return;
             }
 
@@ -169,7 +178,7 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
                 setBootStage(BootStage.SHOW_STARTING_PLAYER);
                 isRematch ? playRematchSfx() : playCoinFlipSfx();
                 
-                if (firstPlayer === myName) setUsernameTurn(myName);
+                if (firstPlayer === user) setUsernameTurn(user);
                 else setUsernameTurn(opponentName);
                 
                 setMessages(event.data);
@@ -185,8 +194,28 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
                 return;
             }
 
+            if (event.data.startsWith("[MOVE_CARD_CONFIRMED]:")) {
+                const parts = event.data.substring("[MOVE_CARD_CONFIRMED]:".length).split(":");
+                const cardId = parts?.[0];
+                const from = parts?.[1];
+                const to = parts?.[2];
+                if (cardId && from && to) moveCard(cardId, from, to);
+                return;
+            }
+
             if (event.data.startsWith("[MOVE_CARD_TO_STACK]:")) {
                 const parts = event.data.substring("[MOVE_CARD_TO_STACK]:".length).split(":");
+                const topOrBottom = parts?.[0];
+                const cardId = parts?.[1];
+                const from = parts?.[2];
+                const to = parts?.[3];
+                const facing = parts?.[4] === "undefined" ? undefined : parts?.[4];
+                if (topOrBottom && cardId && from && to) moveCardToStack(topOrBottom, cardId, from, to, facing);
+                return;
+            }
+
+            if (event.data.startsWith("[MOVE_CARD_TO_STACK_CONFIRMED]:")) {
+                const parts = event.data.substring("[MOVE_CARD_TO_STACK_CONFIRMED]:".length).split(":");
                 const topOrBottom = parts?.[0];
                 const cardId = parts?.[1];
                 const from = parts?.[2];
@@ -307,17 +336,17 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
 
             if (event.data.includes("SFX")) {
                 switch (event.data) {
-                    case "[REVEAL_SFX]": playRevealSfx(); break;
-                    case "[SECURITY_REVEAL_SFX]": playSecurityRevealSfx(); break;
-                    case "[PLACE_CARD_SFX]": playOpponentPlaceCardSfx(); break;
-                    case "[DRAW_CARD_SFX]": playDrawCardSfx(); break;
-                    case "[SUSPEND_CARD_SFX]": playSuspendSfx(); break;
-                    case "[UNSUSPEND_CARD_SFX]": playUnsuspendSfx(); break;
-                    case "[BUTTON_CLICK_SFX]": playButtonClickSfx(); break;
-                    case "[TRASH_CARD_SFX]": playTrashCardSfx(); break;
-                    case "[SHUFFLE_DECK_SFX]": playShuffleDeckSfx(); break;
-                    case "[NEXT_PHASE_SFX]": playNextPhaseSfx(); break;
-                    case "[PASS_TURN_SFX]": playPassTurnSfx(); break;
+                    case "[REVEAL_SFX]": { playRevealCardSfx(); break; }
+                    case "[SECURITY_REVEAL_SFX]": { playSecurityRevealSfx(); break; }
+                    case "[PLACE_CARD_SFX]": { playOpponentPlaceCardSfx(); break; }
+                    case "[DRAW_CARD_SFX]": { playDrawCardSfx(); break; }
+                    case "[SUSPEND_CARD_SFX]": { playSuspendSfx(); break; }
+                    case "[UNSUSPEND_CARD_SFX]": { playUnsuspendSfx(); break; }
+                    case "[BUTTON_CLICK_SFX]": { playButtonClickSfx(); break; }
+                    case "[TRASH_CARD_SFX]": { playTrashCardSfx(); break; }
+                    case "[SHUFFLE_DECK_SFX]": { playShuffleDeckSfx(); break; }
+                    case "[NEXT_PHASE_SFX]": { playNextPhaseSfx(); break; }
+                    case "[PASS_TURN_SFX]": { playPassTurnSfx(); break; }
                 }
             }
 
@@ -354,7 +383,7 @@ export default function useGameWebSocket(props: UseGameWebSocketProps): UseGameW
                     break;
                 }
                 case "[UPDATE_PHASE]": {
-                    if (phase === Phase.MAIN) setUsernameTurn(myName);
+                    if (phase === Phase.MAIN) setUsernameTurn(user);
                     progressToNextPhase();
                     break;
                 }

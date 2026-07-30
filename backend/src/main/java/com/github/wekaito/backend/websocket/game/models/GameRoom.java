@@ -8,12 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.CloseStatus;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
@@ -32,9 +33,9 @@ public class GameRoom {
     private static final SecureRandom secureRand = new SecureRandom();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    // ✅ FIXED: Initialized as a thread-safe Concurrent Set to prevent ConcurrentModificationExceptions
-    private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
-    private final List<ScheduledFuture<?>> scheduledTasks = new ArrayList<>();
+    private final Set<WebSocketSession> sessions = new CopyOnWriteArraySet<>();
+    private final List<ScheduledFuture<?>> scheduledTasks = new CopyOnWriteArrayList<>();
+    private final Object mutationLock = new Object();
 
     private Boolean player1Mulligan;
     private Boolean player2Mulligan;
@@ -49,11 +50,27 @@ public class GameRoom {
     int bootStage = 0; // 0 = CLEAR, 1 = SHOW_STARTING_PLAYER, 2 = MULLIGAN, 3 = MULLIGAN, 4 = GAME_START
 
     public void addSession(WebSocketSession session) {
+        String username = session.getPrincipal() == null ? null : session.getPrincipal().getName();
+        if (username != null) {
+            for (WebSocketSession existingSession : sessions) {
+                if (!existingSession.getId().equals(session.getId()) &&
+                        existingSession.getPrincipal() != null &&
+                        username.equals(existingSession.getPrincipal().getName())) {
+                    sessions.remove(existingSession);
+                    try {
+                        existingSession.close(CloseStatus.NORMAL.withReason("Replaced by a newer connection"));
+                    } catch (Exception ignored) {
+                        // The old connection is already unusable.
+                    }
+                }
+            }
+        }
         sessions.add(session);
+        updateLastHearBeat(session);
     }
     
     public void removeSession(WebSocketSession session) {
-        sessions.removeIf(s -> s.getId().equals(session.getId()));
+        sessions.remove(session);
     }
 
     public void updateLastHearBeat(WebSocketSession session) {
@@ -66,58 +83,52 @@ public class GameRoom {
         }
     }
 
-    private static final long HEARTBEAT_TIMEOUT_MS = 10500; // 10 seconds of client heartbeat + 0.5s buffer
-
-    public boolean hasFullConnection() {
-        long now = System.currentTimeMillis();
-        return (now - lastHeartBeatReceivedPlayer1 < HEARTBEAT_TIMEOUT_MS) &&
-                (now - lastHeartBeatReceivedPlayer2 < HEARTBEAT_TIMEOUT_MS);
-    }
+    private static final long ROOM_EXPIRY_MS = 300000;
 
     public boolean isEmpty() {
         long now = System.currentTimeMillis();
-        return (now - lastHeartBeatReceivedPlayer1 >= HEARTBEAT_TIMEOUT_MS) &&
-                (now - lastHeartBeatReceivedPlayer2 >= HEARTBEAT_TIMEOUT_MS);
+        boolean hasOpenSessions = sessions.stream().anyMatch(WebSocketSession::isOpen);
+        return !hasOpenSessions &&
+                (now - lastHeartBeatReceivedPlayer1 >= ROOM_EXPIRY_MS) &&
+                (now - lastHeartBeatReceivedPlayer2 >= ROOM_EXPIRY_MS);
     }
 
-    public boolean areBothPlayersConnected() {
-        boolean p1Connected = false;
-        boolean p2Connected = false;
-        for (WebSocketSession s : sessions) {
-            if (!s.isOpen() || s.getPrincipal() == null) continue;
-            String name = s.getPrincipal().getName();
-            if (name.equals(player1.username())) p1Connected = true;
-            if (name.equals(player2.username())) p2Connected = true;
+    public boolean hasBothPlayersConnected() {
+        Set<String> connectedPlayers = new HashSet<>();
+        for (WebSocketSession session : sessions) {
+            if (session.isOpen() && session.getPrincipal() != null) {
+                connectedPlayers.add(session.getPrincipal().getName());
+            }
         }
-        return p1Connected && p2Connected;
+        return connectedPlayers.contains(player1.username()) && connectedPlayers.contains(player2.username());
+    }
+
+    public boolean hasOpenSessionFor(String username) {
+        return sessions.stream().anyMatch(session ->
+                session.isOpen() && session.getPrincipal() != null && username.equals(session.getPrincipal().getName()));
+    }
+
+    public void sendMessage(WebSocketSession session, String message) {
+        if (!session.isOpen()) return;
+        try {
+            synchronized (session) {
+                session.sendMessage(new TextMessage(message));
+            }
+        } catch (Exception e) {
+            // A failed session is removed by the close callback or cleanup task.
+        }
     }
 
     public void sendMessagesToAll(String message) {
-        sessions.removeIf(s -> !s.isOpen());
         for (WebSocketSession s : sessions) {
-            // ✅ FIXED: Synchronized on the session object to prevent TEXT_PARTIAL_WRITING errors
-            synchronized (s) {
-                try {
-                    s.sendMessage(new TextMessage(message));
-                } catch (IOException e) {
-                    // Ignore, will be cleaned up
-                }
-            }
+            sendMessage(s, message);
         }
     }
 
     public void sendMessageToOtherSessions(WebSocketSession sender, String message) {
-        sessions.removeIf(s -> !s.isOpen());
         for (WebSocketSession s : sessions) {
-            if (!s.getId().equals(sender.getId())) {
-                // ✅ FIXED: Synchronized on the session object to prevent TEXT_PARTIAL_WRITING errors
-                synchronized (s) {
-                    try {
-                        s.sendMessage(new TextMessage(message));
-                    } catch (IOException e) {
-                        // Ignore, will be cleaned up
-                    }
-                }
+            if (s.isOpen() && !s.getId().equals(sender.getId())) {
+                sendMessage(s, message);
             }
         }
     }
@@ -161,7 +172,10 @@ public class GameRoom {
                     .linkDP(card.linkDP())
                     .linkEffect(card.linkEffect())
                     .linkRequirement(card.linkRequirement())
-                    .assemblyEffect(card.assemblyEffect())
+                    .assembly(card.assembly())
+                    .dualEffect(card.dualEffect())
+                    .optionCardColorRequirement(card.optionCardColorRequirement())
+                    .optionCardEffect(card.optionCardEffect())
                     .restrictions(card.restrictions())
                     .illustrator(card.illustrator())
                     .id(UUID.randomUUID())
@@ -326,7 +340,7 @@ public class GameRoom {
         }
     }
 
-    public void storeChatMessage(String message) {
+    public synchronized void storeChatMessage(String message) {
         if (this.chat == null) {
             this.chat = new String[]{message};
         } else {

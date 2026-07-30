@@ -93,6 +93,9 @@ public class CardService {
             null,
             null,
             null,
+            null,
+            null,
+            null,
             new Restrictions("","","",""),
             null
     );
@@ -202,6 +205,9 @@ public class CardService {
                         (card.linkEffect().equals("-")) ? null : card.linkEffect(),
                         (card.linkRequirement().equals("-")) ? null : card.linkRequirement(),
                         (card.assembly().equals("-")) ? null : card.assembly(),
+                        (card.dualEffect().equals("-")) ? null : card.dualEffect(),
+                        (card.optionCardColourRequirement().equals("-")) ? null : card.optionCardColourRequirement(),
+                        (card.optionCardEffect().equals("-")) ? null : card.optionCardEffect(),
                         card.restrictions(),
                         card.illustrator()));
             }
