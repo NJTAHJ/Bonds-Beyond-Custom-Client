@@ -1,34 +1,21 @@
 // ==========================================
-// BEYOND THE BONDS (BB1) & ST01 MONGO UPDATE SCRIPT
+// RE-IMPORT SCRIPT MATCHING DISK FILENAMES
 // ==========================================
 
-// 1. Array of card numbers to clean up prior to insertion
-const cardNumbersToClean = [
-  "ST01-01",   // Hopmon
-  "ST01-02",   // Salamon
-  "ST01-03",   // Gatomon
-  "ST01-04",   // Angewomon
-  "ST01-05",   // Magnadramon
-  "ST01-06",   // Nyabootmon
-  "ST01-07",   // Dagger
-  "ST01-08",   // Strikedramon
-  "ST01-009",  // Cyberdramon
-  "ST01-010",  // Darkdramon
-  "ST01-11",   // Fujinmon
-  "ST01-12",   // Kari Kamiya
-  "ST01-13",   // Nico Kärnä
-  "ST01-14",   // Erase Claw
-  "ST01-15",   // When Dark Meets The Light
-  "BB1-035",   // Metatromon (Fixed to BB1-035)
-  "BB1-043",   // Lynxmon (Fixed text from Metatromon to Lynxmon)
-  "BB1-085"    // Anubismon (Standard + Alt Art)
+const targetCards = [
+  "ST01-01", "ST01-02", "ST01-03", "ST01-04", "ST01-05", 
+  "ST01-06", "ST01-07", "ST01-08", "ST01-008", "ST01-009", 
+  "ST01-010", "ST01-11", "ST01-12", "ST01-13", "ST01-14", 
+  "ST01-15", "BB1-035", "BB1-043", "BB1-085", "BB1-085_P1",
+  "BB1-096", "BB1-097", "BB1-098", "BB1-103", "BB1-103_P1", 
+  "BB1-103_P2", "BB1-104", "BB1-104_P1", "BB1-104_P2"
 ];
 
-db.card.deleteMany({ cardNumber: { $in: cardNumbersToClean } });
+// Clean up existing records
+db.card.deleteMany({ uniqueCardNumber: { $in: targetCards } });
 
-// 2. Insert Updated and New Cards
 db.card.insertMany([
-  // --- FULL ST01 SET (NIKARI LINE) ---
+  // --- ST01 NIKARI LINE (EXACT WEBP MATCH) ---
   {
     "uniqueCardNumber": "ST01-01",
     "name": "Hopmon",
@@ -185,7 +172,7 @@ db.card.insertMany([
   {
     "uniqueCardNumber": "ST01-08",
     "name": "Strikedramon",
-    "imgUrl": "/ST01-08.webp",
+    "imgUrl": "/ST01-008.webp", // <-- Matches ST01-008.webp from disk
     "cardType": "Digimon",
     "color": ["Blue"],
     "cardNumber": "ST01-08",
@@ -207,7 +194,7 @@ db.card.insertMany([
   {
     "uniqueCardNumber": "ST01-009",
     "name": "Cyberdramon",
-    "imgUrl": "/ST01-009.webp",
+    "imgUrl": "/ST01-009.webp", // <-- Matches ST01-009.webp
     "cardType": "Digimon",
     "color": ["Black"],
     "cardNumber": "ST01-009",
@@ -229,7 +216,7 @@ db.card.insertMany([
   {
     "uniqueCardNumber": "ST01-010",
     "name": "Darkdramon",
-    "imgUrl": "/ST01-010.webp",
+    "imgUrl": "/ST01-010.webp", // <-- Matches ST01-010.webp
     "cardType": "Digimon",
     "color": ["Black"],
     "cardNumber": "ST01-010",
@@ -336,7 +323,7 @@ db.card.insertMany([
     "_class": "com.github.wekaito.backend.models.Card"
   },
 
-  // --- BB1-035 METATROMON (FIXED LOCATION) ---
+  // --- BB1 CARDS WITH WEBP MATCHES ---
   {
     "uniqueCardNumber": "BB1-035",
     "name": "Metatromon",
@@ -362,8 +349,6 @@ db.card.insertMany([
     "illustrator": "Beyond The Bonds",
     "_class": "com.github.wekaito.backend.models.Card"
   },
-
-  // --- BB1-043 LYNXMON (CORRECTED FROM IMAGE) ---
   {
     "uniqueCardNumber": "BB1-043",
     "name": "Lynxmon",
@@ -389,23 +374,73 @@ db.card.insertMany([
     "illustrator": "Beyond The Bonds",
     "_class": "com.github.wekaito.backend.models.Card"
   },
-
-  // --- ANUBISMON FIX (BB1-085 STANDARD + ALT ART) ---
   {
-    "uniqueCardNumber": "BB1-085",
-    "name": "Anubismon",
-    "imgUrl": "/BB1-085.webp",
+    "uniqueCardNumber": "BB1-096",
+    "name": "Driver City",
+    "imgUrl": "/BB1-096.webp",
+    "cardType": "Option",
+    "color": ["Yellow", "Green"],
+    "cardNumber": "BB1-096",
+    "digivolveConditions": [],
+    "digiType": ["DC"],
+    "playCost": 3,
+    "mainEffect": "＜Use Req. ([DC] trait)＞\n[Security] [All Turns] All of your Digimon with the [DC] trait gain ＜Barrier＞ and ＜Piercing＞. All of your Tamers with the [DC] trait gain ＜Rush＞.\n[Main] Add your bottom security card to your hand and place this card face up as your bottom security card. Then, you may play 1 Digimon card with the [DC] trait from your hand with its play cost reduced by 3.",
+    "securityEffect": "[Security] You may play 1 Level 4 or lower Digimon card with the [DC] trait from your hand or trash without paying its memory cost.",
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-097",
+    "name": "Digimon Wrestling Belt",
+    "imgUrl": "/BB1-097.webp",
+    "cardType": "Option",
+    "color": ["Blue", "Green"],
+    "cardNumber": "BB1-097",
+    "digivolveConditions": [],
+    "digiType": ["Arena"],
+    "playCost": 3,
+    "mainEffect": "＜Use Req. ([Arena] trait)＞\n[Main] Unsuspend 1 of your Digimon. Then, you may link this card to 1 of your Digimon without paying the cost.",
+    "securityEffect": "[Security] Suspend 1 of your opponent's Digimon. Then, add this card to your hand.",
+    "linkDP": 3000,
+    "linkEffect": "＜All Turns＞ ＜Once Per Turn＞ When this Digimon wins a battle, trash the top card of your opponent's security stack.",
+    "linkRequirement": "[Link] [Arena] trait: 2 cost",
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-098",
+    "name": "Deep Network",
+    "imgUrl": "/BB1-098.webp",
+    "cardType": "Option",
+    "color": ["Blue", "Purple"],
+    "cardNumber": "BB1-098",
+    "digivolveConditions": [],
+    "digiType": ["CT"],
+    "playCost": 5,
+    "mainEffect": "＜Use Req. ([CT] trait)＞\n[Security] [All Turns] [Once Per Turn] When 1 of your Level 6 or higher Digimon with the [CT] trait would be deleted, you may play 1 Level 5 or lower Digimon card with the [CT] trait from that Digimon's digivolution cards without paying the cost.\n[Main] Add your bottom security card to your hand and place this card face up as your bottom security card. Then, you may play 1 [CT] trait Digimon card from your hand with its play cost reduced by 3.",
+    "securityEffect": "[Security] You may play 1 Level 4 or lower Digimon card with the [CT] trait from your hand or trash without paying the cost.",
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-103",
+    "name": "TyrantKabuterimon",
+    "imgUrl": "/BB1-103.webp",
     "cardType": "Digimon",
-    "color": ["Purple"],
-    "cardNumber": "BB1-085",
-    "digivolveConditions": [{ "color": "Purple", "level": 5, "cost": 3 }],
+    "color": ["Green"],
+    "cardNumber": "BB1-103",
+    "digivolveConditions": [{ "color": "Green", "level": 6, "cost": 6 }],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Insectoid] trait with 13000 DP or less: 3 cost",
     "stage": "Mega",
-    "digiType": ["Shaman"],
-    "attribute": "Vaccine",
-    "dp": 11000,
-    "playCost": 11,
-    "level": 6,
-    "mainEffect": "[When Digivolving] You may play 1 Level 4 or lower Digimon card from your trash without paying its memory cost.\n[All Turns] All of your Digimon played from the trash gain ＜Rush＞ for the turn.",
+    "digiType": ["Insectoid", "Nerds", "Arena"],
+    "attribute": "Virus",
+    "dp": 14000,
+    "playCost": 14,
+    "level": 7,
+    "mainEffect": "＜Vortex＞ ＜Piercing＞\n[When Digivolving] Play 1 [Drone] Token (Green/Digimon/Insectoid/2000 DP/this Digimon cannot unsuspend. On Deletion: Suspend 1 of your opponent's Digimon) to your opponent's field suspended. Then, play up to 5 play cost of Digimon cards with the [Nerds], [Arena], or [Insectoid] traits from your trash without paying their memory costs. For each of your opponent's suspended Digimon, increase the total play cost you can play by 2.\n[All Turns] All of your other Digimon with the [Insectoid], [Arena], or [Nerds] trait gain ＜Retaliate＞.\n[All Turns] [Once Per Turn] When a Digimon is played, 1 of your other Digimon may battle 1 of your opponent's Digimon.\n[Rule] This card is also treated as having the [Free] trait.",
     "inheritedEffect": null,
     "securityEffect": null,
     "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
@@ -413,20 +448,112 @@ db.card.insertMany([
     "_class": "com.github.wekaito.backend.models.Card"
   },
   {
-    "uniqueCardNumber": "BB1-085_P1",
-    "name": "Anubismon",
-    "imgUrl": "/BB1-085_P1.webp",
+    "uniqueCardNumber": "BB1-103_P1",
+    "name": "TyrantKabuterimon",
+    "imgUrl": "/BB1-103_P1.webp",
     "cardType": "Digimon",
-    "color": ["Purple"],
-    "cardNumber": "BB1-085",
-    "digivolveConditions": [{ "color": "Purple", "level": 5, "cost": 3 }],
+    "color": ["Green"],
+    "cardNumber": "BB1-103",
+    "digivolveConditions": [{ "color": "Green", "level": 6, "cost": 6 }],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Insectoid] trait with 13000 DP or less: 3 cost",
     "stage": "Mega",
-    "digiType": ["Shaman"],
+    "digiType": ["Insectoid", "Nerds", "Arena"],
+    "attribute": "Virus",
+    "dp": 14000,
+    "playCost": 14,
+    "level": 7,
+    "mainEffect": "＜Vortex＞ ＜Piercing＞\n[When Digivolving] Play 1 [Drone] Token (Green/Digimon/Insectoid/2000 DP/this Digimon cannot unsuspend. On Deletion: Suspend 1 of your opponent's Digimon) to your opponent's field suspended. Then, play up to 5 play cost of Digimon cards with the [Nerds], [Arena], or [Insectoid] traits from your trash without paying their memory costs. For each of your opponent's suspended Digimon, increase the total play cost you can play by 2.\n[All Turns] All of your other Digimon with the [Insectoid], [Arena], or [Nerds] trait gain ＜Retaliate＞.\n[All Turns] [Once Per Turn] When a Digimon is played, 1 of your other Digimon may battle 1 of your opponent's Digimon.\n[Rule] This card is also treated as having the [Free] trait.",
+    "inheritedEffect": null,
+    "securityEffect": null,
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-103_P2",
+    "name": "TyrantKabuterimon",
+    "imgUrl": "/BB1-103_P2.webp",
+    "cardType": "Digimon",
+    "color": ["Green"],
+    "cardNumber": "BB1-103",
+    "digivolveConditions": [{ "color": "Green", "level": 6, "cost": 6 }],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Insectoid] trait with 13000 DP or less: 3 cost",
+    "stage": "Mega",
+    "digiType": ["Insectoid", "Nerds", "Arena"],
+    "attribute": "Virus",
+    "dp": 14000,
+    "playCost": 14,
+    "level": 7,
+    "mainEffect": "＜Vortex＞ ＜Piercing＞\n[When Digivolving] Play 1 [Drone] Token (Green/Digimon/Insectoid/2000 DP/this Digimon cannot unsuspend. On Deletion: Suspend 1 of your opponent's Digimon) to your opponent's field suspended. Then, play up to 5 play cost of Digimon cards with the [Nerds], [Arena], or [Insectoid] traits from your trash without paying their memory costs. For each of your opponent's suspended Digimon, increase the total play cost you can play by 2.\n[All Turns] All of your other Digimon with the [Insectoid], [Arena], or [Nerds] trait gain ＜Retaliate＞.\n[All Turns] [Once Per Turn] When a Digimon is played, 1 of your other Digimon may battle 1 of your opponent's Digimon.\n[Rule] This card is also treated as having the [Free] trait.",
+    "inheritedEffect": null,
+    "securityEffect": null,
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-104",
+    "name": "Omnimon",
+    "imgUrl": "/BB1-104.webp",
+    "cardType": "Digimon",
+    "color": ["White", "Blue", "Red"],
+    "cardNumber": "BB1-104",
+    "digivolveConditions": [],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Nerds] trait: 5 cost",
+    "dnaDigivolve": "[DNA Digivolve] [Red]/[Yellow] Lv.6 + [Blue]/[Green] Lv.6\u00a0: Cost 0",
+    "stage": "Mega",
+    "digiType": ["Holy Knight", "Nerds", "IADA"],
     "attribute": "Vaccine",
-    "dp": 11000,
-    "playCost": 11,
-    "level": 6,
-    "mainEffect": "[When Digivolving] You may play 1 Level 4 or lower Digimon card from your trash without paying its memory cost.\n[All Turns] All of your Digimon played from the trash gain ＜Rush＞ for the turn.",
+    "dp": 15000,
+    "playCost": 15,
+    "level": 7,
+    "mainEffect": "＜Partition {[WarGreymon] & [MetalGarurumon]}＞\n[When Digivolving] [When Attacking] [Once Per Turn] You may play 1 Level 5 or lower Digimon card with the [Nerds] trait from your hand or trash without paying its memory cost. If DNA digivolving, add 1 to the number of Digimon cards this effect can play.\n[All Turns] [Once Per Turn] When any of your Digimon with the [Nerds] trait are played, 1 of your opponent's Digimon gets -5000 DP for each of your Digimon with the [Nerds] trait in play until the end of your opponent's turn.\n[All Turns] While you have [Nathan James] in play, all of your Level 5 or higher Digimon with the [Nerds] trait gain ＜Reboot＞.",
+    "inheritedEffect": null,
+    "securityEffect": null,
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-104_P1",
+    "name": "Omnimon",
+    "imgUrl": "/BB1-104_P1.webp",
+    "cardType": "Digimon",
+    "color": ["White", "Blue", "Red"],
+    "cardNumber": "BB1-104",
+    "digivolveConditions": [],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Nerds] trait: 5 cost",
+    "dnaDigivolve": "[DNA Digivolve] [Red]/[Yellow] Lv.6 + [Blue]/[Green] Lv.6\u00a0: Cost 0",
+    "stage": "Mega",
+    "digiType": ["Holy Knight", "Nerds", "IADA"],
+    "attribute": "Vaccine",
+    "dp": 15000,
+    "playCost": 15,
+    "level": 7,
+    "mainEffect": "＜Partition {[WarGreymon] & [MetalGarurumon]}＞\n[When Digivolving] [When Attacking] [Once Per Turn] You may play 1 Level 5 or lower Digimon card with the [Nerds] trait from your hand or trash without paying its memory cost. If DNA digivolving, add 1 to the number of Digimon cards this effect can play.\n[All Turns] [Once Per Turn] When any of your Digimon with the [Nerds] trait are played, 1 of your opponent's Digimon gets -5000 DP for each of your Digimon with the [Nerds] trait in play until the end of your opponent's turn.\n[All Turns] While you have [Nathan James] in play, all of your Level 5 or higher Digimon with the [Nerds] trait gain ＜Reboot＞.",
+    "inheritedEffect": null,
+    "securityEffect": null,
+    "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
+    "illustrator": "Beyond The Bonds",
+    "_class": "com.github.wekaito.backend.models.Card"
+  },
+  {
+    "uniqueCardNumber": "BB1-104_P2",
+    "name": "Omnimon",
+    "imgUrl": "/BB1-104_P2.webp",
+    "cardType": "Digimon",
+    "color": ["White", "Blue", "Red"],
+    "cardNumber": "BB1-104",
+    "digivolveConditions": [],
+    "specialDigivolve": "[Digivolve] from Lv.6 w/[Nerds] trait: 5 cost",
+    "dnaDigivolve": "[DNA Digivolve] [Red]/[Yellow] Lv.6 + [Blue]/[Green] Lv.6\u00a0: Cost 0",
+    "stage": "Mega",
+    "digiType": ["Holy Knight", "Nerds", "IADA"],
+    "attribute": "Vaccine",
+    "dp": 15000,
+    "playCost": 15,
+    "level": 7,
+    "mainEffect": "＜Partition {[WarGreymon] & [MetalGarurumon]}＞\n[When Digivolving] [When Attacking] [Once Per Turn] You may play 1 Level 5 or lower Digimon card with the [Nerds] trait from your hand or trash without paying its memory cost. If DNA digivolving, add 1 to the number of Digimon cards this effect can play.\n[All Turns] [Once Per Turn] When any of your Digimon with the [Nerds] trait are played, 1 of your opponent's Digimon gets -5000 DP for each of your Digimon with the [Nerds] trait in play until the end of your opponent's turn.\n[All Turns] While you have [Nathan James] in play, all of your Level 5 or higher Digimon with the [Nerds] trait gain ＜Reboot＞.",
     "inheritedEffect": null,
     "securityEffect": null,
     "restrictions": { "english": "Unrestricted", "japanese": "Unrestricted" },
