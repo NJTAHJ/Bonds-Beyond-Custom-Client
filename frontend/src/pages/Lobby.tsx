@@ -51,11 +51,11 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 
 function AnnouncementBanner() {
-    // Bump this ID (e.g. v4) whenever you change announcement news so closed banners reappear for players!
-    const ANNOUNCEMENT_ID = "bb1_announcement_v3";
-    const TITLE = "Beyond the Bonds (BB1) V3 Live!";
-    const MESSAGE = "New ST01 Nikari cards & custom set updates are now active.";
-    const LINK_TEXT = "Join Discord / Patch Notes →";
+    // Unique ID for this announcement - bump this when posting new news to reset dismiss memory for all players
+    const ANNOUNCEMENT_ID = "bb1_sc1_release_v1";
+    const TITLE = "BB1 & SC1 Out Now!";
+    const MESSAGE = "Championship starts soon! Check out the new custom sets and test your decks.";
+    const LINK_TEXT = "Join Discord / Tournament Info →";
     const LINK_URL = "https://discord.gg"; // Replace with your Discord or Doc link
 
     const [visible, setVisible] = useState<boolean>(() => {
