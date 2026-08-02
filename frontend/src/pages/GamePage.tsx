@@ -34,6 +34,70 @@ import PhaseIndicator from "../components/game/PhaseIndicator.tsx";
 import SettingsMenuButton from "../components/game/SettingsMenuButton.tsx";
 import { DetailsView, useSettingStates } from "../hooks/useSettingStates.ts";
 
+function PingIndicator() {
+    const [ping, setPing] = useState<number | null>(null);
+
+    useEffect(() => {
+        const checkPing = () => {
+            const start = Date.now();
+            fetch("/api/user/isAdmin", { method: "HEAD" })
+                .then(() => {
+                    const rtt = Date.now() - start;
+                    setPing(rtt);
+                })
+                .catch(() => setPing(null));
+        };
+
+        checkPing();
+        const interval = setInterval(checkPing, 6000);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (ping === null) return null;
+
+    let color = "#22c55e"; // Green default
+    let label = "GOOD";
+    if (ping > 120 && ping <= 250) {
+        color = "#eab308"; // Yellow
+        label = "FAIR";
+    } else if (ping > 250) {
+        color = "#ef4444"; // Red
+        label = "SLOW";
+    }
+
+    return (
+        <div
+            title={`Server Latency: ${ping}ms (${label})`}
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(15, 23, 42, 0.75)",
+                border: `1px solid ${color}`,
+                borderRadius: "4px",
+                padding: "3px 8px",
+                color: "#f8fafc",
+                fontFamily: "'Cousine', 'League Spartan', monospace",
+                fontSize: "0.82rem",
+                boxShadow: `0 0 8px ${color}40`,
+                marginLeft: "10px",
+                verticalAlign: "middle",
+            }}
+        >
+            <span
+                style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: color,
+                    boxShadow: `0 0 6px ${color}`,
+                }}
+            />
+            <span>{ping}ms</span>
+        </div>
+    );
+}
+
 function TurnOverlay() {
     // Cast state selector to any to avoid TS2339 compilation error
     const myTurn = useGameBoardStates((state: any) => (state as any).myTurn);
@@ -299,6 +363,7 @@ export default function GamePage() {
                         </StyledIconButton>
                     </a>
                     <SettingsMenuButton iconFontSize={`${iconWidth}px!important`} />
+                    <PingIndicator />
                 </SoundBar>
             </SettingsContainer>
 
