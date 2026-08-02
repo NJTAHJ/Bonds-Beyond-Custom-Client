@@ -50,6 +50,96 @@ import { AppNotification, NotificationBell } from "./MainMenu.tsx";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 
+function AnnouncementBanner() {
+    // Bump this ID (e.g. v4) whenever you change announcement news so closed banners reappear for players!
+    const ANNOUNCEMENT_ID = "bb1_announcement_v3";
+    const TITLE = "Beyond the Bonds (BB1) V3 Live!";
+    const MESSAGE = "New ST01 Nikari cards & custom set updates are now active.";
+    const LINK_TEXT = "Join Discord / Patch Notes →";
+    const LINK_URL = "https://discord.gg"; // Replace with your Discord or Doc link
+
+    const [visible, setVisible] = useState<boolean>(() => {
+        return localStorage.getItem("dismissed_announcement") !== ANNOUNCEMENT_ID;
+    });
+
+    const handleDismiss = () => {
+        localStorage.setItem("dismissed_announcement", ANNOUNCEMENT_ID);
+        setVisible(false);
+    };
+
+    if (!visible) return null;
+
+    return (
+        <div
+            style={{
+                width: "100%",
+                boxSizing: "border-box",
+                background: "linear-gradient(90deg, #1e1b4b 0%, #311042 50%, #1e1b4b 100%)",
+                borderBottom: "2px solid #8b5cf6",
+                boxShadow: "0 0 15px rgba(139, 92, 246, 0.4)",
+                color: "#ffffff",
+                padding: "10px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                fontSize: "0.88rem",
+                zIndex: 1000,
+                position: "relative",
+                fontFamily: "League Spartan, sans-serif",
+            }}
+        >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <span
+                    style={{
+                        background: "#8b5cf6",
+                        color: "#ffffff",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontWeight: "bold",
+                        fontSize: "0.72rem",
+                        letterSpacing: "0.5px",
+                    }}
+                >
+                    ANNOUNCEMENT
+                </span>
+                <strong style={{ color: "#e0e7ff" }}>{TITLE}</strong>
+                <span style={{ opacity: 0.9 }}>{MESSAGE}</span>
+                {LINK_URL && (
+                    <a
+                        href={LINK_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            color: "#38bdf8",
+                            textDecoration: "none",
+                            fontWeight: "bold",
+                            marginLeft: "4px",
+                        }}
+                    >
+                        {LINK_TEXT}
+                    </a>
+                )}
+            </div>
+            <button
+                onClick={handleDismiss}
+                title="Dismiss announcement"
+                style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#a78bfa",
+                    cursor: "pointer",
+                    fontSize: "1.2rem",
+                    padding: "0 4px",
+                    lineHeight: 1,
+                    marginLeft: "12px",
+                }}
+            >
+                ✕
+            </button>
+        </div>
+    );
+}
+
 function ensureChatTimestamp(chatMessage: ChatMessage): ChatMessage {
     return {
         ...chatMessage,
@@ -322,7 +412,7 @@ export default function Lobby() {
     );
 
     function handleDeckChange(event: ChangeEvent<HTMLSelectElement>) {
-        setActiveDeck(String(event.target.value)); 
+        setActiveDeck(String(event.target.value));
     }
 
     function handleCreateRoom() {
@@ -374,7 +464,7 @@ export default function Lobby() {
         playCountdownSfx();
         setShowCountdown(true);
         const timer = setTimeout(() => {
-            setGameId(gameId); 
+            setGameId(gameId);
             setIsRematch(false);
             clearBoard();
             setIsLoading(false);
@@ -467,6 +557,8 @@ export default function Lobby() {
 
     return (
         <MenuBackgroundWrapper>
+            <AnnouncementBanner />
+
             {showCountdown && (
                 <Dialog
                     open={true}
@@ -663,7 +755,6 @@ export default function Lobby() {
 
                                         return (
                                             <Tile key={player.name}>
-                                                {/*TODO: Replace name and avatar by name plates later*/}
                                                 <img
                                                     alt={player.name + "img"}
                                                     width={96}
@@ -810,7 +901,6 @@ export default function Lobby() {
                                     alignItems: "center",
                                 }}
                             >
-                                {/*<CardTitle>Room Setup</CardTitle>*/}
                                 <Input
                                     value={newRoomName}
                                     onChange={(e) => setNewRoomName(e.target.value)}
@@ -894,7 +984,7 @@ const HeaderActions = styled.div`
 `;
 
 const ContentDiv = styled.div`
-    width: calc(100% - 32px);,
+    width: calc(100% - 32px);
     max-width: calc(100vw - 32px);
     height: calc(100vh - 128px);
     max-height: calc(100vh - 128px);
