@@ -12,10 +12,11 @@ import { useSound } from "../../hooks/useSound.ts";
 import { useDeckStates } from "../../hooks/useDeckStates.ts";
 import MenuDialog from "../MenuDialog.tsx";
 import CustomDialogTitle from "./CustomDialogTitle.tsx";
+import { VisualDeckModal } from "../VisualDeckModal.tsx";
 import ChooseMainDeckSleeve from "./ChooseMainDeckSleeve.tsx";
 import ChooseDeckImage from "./ChooseDeckImage.tsx";
 import ChooseEggDeckSleeve from "./ChooseEggDeckSleeve.tsx";
-import { EditSquare as EditIcon } from "@mui/icons-material";
+import { EditSquare as EditIcon, CameraAlt as ExportImageIcon } from "@mui/icons-material";
 import DeckReadyCheck from "./DeckReadyCheck.tsx";
 
 const tokenImageUrl =
@@ -71,16 +72,6 @@ function generateGradient(deckCards: CardType[]) {
             // @ts-expect-error - colorMap is defined above
             const hexColor = colorMap[color];
 
-            // for smooth gradients:
-            // if (index === 0) gradientParts.push(`${hexColor} ${accumulatedPercentage.toFixed(2)}%`);
-            //
-            // accumulatedPercentage += thisColorPercentage;
-            //
-            // if (index === array.length - 1) accumulatedPercentage = 100;
-            //
-            // gradientParts.push(`${hexColor} ${accumulatedPercentage.toFixed(2)}%`);
-
-            // for sharp gradients:
             const startPercentage = accumulatedPercentage;
             let endPercentage = accumulatedPercentage + thisColorPercentage;
 
@@ -106,6 +97,8 @@ export default function DeckPanel(props: Readonly<ProfileDeckProps>) {
 
     const [isCoverCardSelectionOpen, setCoverCardSelectionOpen] = useState(false);
     const [selectedCoverCard, setSelectedCoverCard] = useState("");
+
+    const [showVisualModal, setShowVisualModal] = useState(false);
 
     const fetchedCards = useDeckStates((state) => state.fetchedCards);
     const decks = useDeckStates((state) => state.decks);
@@ -173,6 +166,19 @@ export default function DeckPanel(props: Readonly<ProfileDeckProps>) {
 
     return (
         <WrapperDiv style={{ pointerEvents: isDragging ? "none" : "unset" }} lobbyView={lobbyView}>
+            {/* Visual Deck Image Export Modal */}
+            <VisualDeckModal
+                deck={{
+                    ...deck,
+                    // @ts-ignore - Pass resolved card arrays to visual modal
+                    mainDeckList: mainDeckCards,
+                    // @ts-ignore
+                    eggDeckList: eggDeckCards,
+                }}
+                open={showVisualModal}
+                onClose={() => setShowVisualModal(false)}
+            />
+
             <MenuDialog
                 onClose={() => setIsMainSleeveSelectionOpen(false)}
                 open={isMainSleeveSelectionOpen}
@@ -257,6 +263,17 @@ export default function DeckPanel(props: Readonly<ProfileDeckProps>) {
                     onClick={onEggSleeveClick}
                 />
 
+                <ExportImageButtonContainer
+                    className={"button"}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowVisualModal(true);
+                    }}
+                    title="Export Visual Deck Image (.PNG)"
+                >
+                    <ExportImageIcon fontSize="small" />
+                </ExportImageButtonContainer>
+
                 <DeckReadyCheck deck={deck} isLobbyView={!!lobbyView} />
 
                 {fetchedCards.length > 0 && mainDeckCards.length > 0 && (
@@ -313,7 +330,7 @@ const ContainerDiv = styled.div<{ lobbyView?: boolean }>`
     grid-template-areas:
         "card-image card-image card-image sleeve sleeve egg-sleeve edit"
         "card-image card-image card-image sleeve sleeve egg-sleeve edit"
-        "card-image card-image card-image sleeve sleeve . ready"
+        "card-image card-image card-image sleeve sleeve export ready"
         "card-image card-image card-image levels levels digimons tamers"
         "card-image card-image card-image levels levels options eggs"
         "card-image card-image card-image colors colors colors colors";
@@ -473,4 +490,12 @@ const PanelButtonContainer = styled.div`
             scale: 0.95;
         }
     }
+`;
+
+const ExportImageButtonContainer = styled(PanelButtonContainer)`
+    grid-area: export;
+    border-radius: 3px;
+    transform: translate(-2px, -3px);
+    width: 28px;
+    height: 28px;
 `;

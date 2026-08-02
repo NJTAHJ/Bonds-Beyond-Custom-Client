@@ -25,6 +25,7 @@
     "@tsparticles/slim": "^3.8.1",
     "axios": "^1.13.1",
     "dnd-kit": "^0.0.2",
+    "html-to-image": "^1.11.13",
     "lottie-react": "^2.4.1",
     "mui-color-input": "^7.0.0",
     "react": "^19.2.0",
