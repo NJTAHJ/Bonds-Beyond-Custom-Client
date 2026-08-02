@@ -2,7 +2,7 @@ import GameBackground from "../components/game/GameBackground.tsx";
 import styled from "@emotion/styled";
 import { IconButton } from "@mui/material";
 import carbackSrc from "../assets/cardBack.jpg";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import PlayerBoardSide from "../components/game/PlayerBoardSide/PlayerBoardSide.tsx";
 import { useGeneralStates } from "../hooks/useGeneralStates.ts";
 import { useContextMenu } from "react-contexify";
@@ -34,6 +34,95 @@ import PhaseIndicator from "../components/game/PhaseIndicator.tsx";
 import SettingsMenuButton from "../components/game/SettingsMenuButton.tsx";
 import { DetailsView, useSettingStates } from "../hooks/useSettingStates.ts";
 
+function TurnOverlay() {
+    // Cast state selector to any to avoid TS2339 compilation error
+    const myTurn = useGameBoardStates((state: any) => (state as any).myTurn);
+    const phase = useGameBoardStates((state: any) => (state as any).phase);
+
+    const [displayText, setDisplayText] = useState<string>("");
+    const [bannerColor, setBannerColor] = useState<string>("#38bdf8");
+    const [animationKey, setAnimationKey] = useState<number>(0);
+
+    useEffect(() => {
+        if (phase || myTurn !== undefined) {
+            if (myTurn === true) {
+                setDisplayText(phase ? `YOUR TURN - ${phase}` : "YOUR TURN!");
+                setBannerColor(
+                    "linear-gradient(90deg, rgba(14, 165, 233, 0) 0%, rgba(14, 165, 233, 0.85) 25%, rgba(14, 165, 233, 0.85) 75%, rgba(14, 165, 233, 0) 100%)"
+                );
+            } else if (myTurn === false) {
+                setDisplayText(phase ? `OPPONENT'S TURN - ${phase}` : "OPPONENT'S TURN");
+                setBannerColor(
+                    "linear-gradient(90deg, rgba(225, 29, 72, 0) 0%, rgba(225, 29, 72, 0.85) 25%, rgba(225, 29, 72, 0.85) 75%, rgba(225, 29, 72, 0) 100%)"
+                );
+            } else if (phase) {
+                setDisplayText(`${phase} PHASE`);
+                setBannerColor(
+                    "linear-gradient(90deg, rgba(139, 92, 246, 0) 0%, rgba(139, 92, 246, 0.85) 25%, rgba(139, 92, 246, 0.85) 75%, rgba(139, 92, 246, 0) 100%)"
+                );
+            }
+            setAnimationKey((prev) => prev + 1);
+        }
+    }, [myTurn, phase]);
+
+    if (!displayText) return null;
+
+    return (
+        <>
+            <style>{`
+                @keyframes turnBannerFade {
+                    0% {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.85);
+                        filter: blur(8px);
+                    }
+                    15% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                        filter: blur(0px);
+                    }
+                    80% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                        filter: blur(0px);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(1.1);
+                        filter: blur(6px);
+                    }
+                }
+            `}</style>
+            <div
+                key={animationKey}
+                style={{
+                    position: "fixed",
+                    top: "40%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: "100vw",
+                    padding: "18px 0",
+                    background: bannerColor,
+                    color: "#ffffff",
+                    textAlign: "center",
+                    fontFamily: "'League Spartan', 'Pixel Digivolve', sans-serif",
+                    fontSize: "2.5rem",
+                    fontWeight: 900,
+                    letterSpacing: "4px",
+                    textTransform: "uppercase",
+                    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 255, 255, 0.6)",
+                    boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+                    zIndex: 9999,
+                    pointerEvents: "none",
+                    animation: "turnBannerFade 1.6s ease-in-out forwards",
+                }}
+            >
+                {displayText}
+            </div>
+        </>
+    );
+}
+
 export type WSUtils = {
     matchInfo: { gameId: string; user: string; opponentName: string; isSpectator: boolean };
     sendMessage: SendMessage;
@@ -51,7 +140,7 @@ export default function GamePage() {
     const user = useGeneralStates((state) => state.user);
 
     const gameId = useGameBoardStates((state) => state.gameId);
-    
+
     const p1 = gameId.split("‗")[0];
     const p2 = gameId.split("‗")[1];
     const isSpectator = false;
@@ -231,6 +320,7 @@ export default function GamePage() {
 
     return (
         <Container ref={boardContainerRef}>
+            <TurnOverlay />
             <GameBackground />
             <ContextMenus wsUtils={wsUtils} />
             <AttackArrows />

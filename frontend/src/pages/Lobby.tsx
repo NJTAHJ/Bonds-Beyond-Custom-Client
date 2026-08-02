@@ -56,7 +56,7 @@ function AnnouncementBanner() {
     const TITLE = "BB1 & SC1 Out Now!";
     const MESSAGE = "Championship starts soon! Check out the new custom sets and test your decks.";
     const LINK_TEXT = "Join Discord / Tournament Info →";
-    const LINK_URL = "https://discord.gg"; // Replace with your Discord or Doc link
+    const LINK_URL = "https://discord.gg/8Ex9fEpeeT"; // Replace with your Discord or Doc link
 
     const [visible, setVisible] = useState<boolean>(() => {
         return localStorage.getItem("dismissed_announcement") !== ANNOUNCEMENT_ID;
