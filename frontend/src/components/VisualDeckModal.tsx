@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toPng } from "html-to-image";
 import { DeckType } from "../utils/types";
 
@@ -47,7 +48,8 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
         }
     };
 
-    return (
+    // Use React Portal to render directly under document.body at the top DOM layer
+    return createPortal(
         <div
             style={{
                 position: "fixed",
@@ -55,17 +57,17 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
                 left: 0,
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "rgba(0, 0, 0, 0.85)",
-                zIndex: 99999,
+                backgroundColor: "rgba(0, 0, 0, 0.88)",
+                zIndex: 999999, // High z-index on body level
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                backdropFilter: "blur(6px)",
+                backdropFilter: "blur(8px)",
             }}
         >
             {/* Top Action Bar */}
-            <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "16px", zIndex: 1000000 }}>
                 <button
                     onClick={handleDownload}
                     disabled={downloading}
@@ -81,7 +83,7 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
                         boxShadow: "0 0 15px rgba(37, 99, 235, 0.5)",
                     }}
                 >
-                    {downloading ? "Generating Image..." : "📥 Download Deck Image (.PNG)"}
+                    {downloading ? "Generating Image..." : "Download Deck Image (.PNG)"}
                 </button>
                 <button
                     onClick={onClose}
@@ -112,7 +114,7 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
                     border: "2px solid #3b82f6",
                     borderRadius: "12px",
                     padding: "24px",
-                    boxShadow: "0 0 30px rgba(59, 130, 246, 0.3)",
+                    boxShadow: "0 0 30px rgba(59, 130, 246, 0.4)",
                     color: "#f8fafc",
                     fontFamily: "'League Spartan', sans-serif",
                 }}
@@ -131,7 +133,7 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
                     <div>
                         <h1 style={{ margin: 0, fontSize: "2rem", color: "#60a5fa" }}>{deck.name}</h1>
                         <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
-                            Project Drasil | Beyond the Bonds Edition
+                            Project Drasil |
                         </span>
                     </div>
                     <div style={{ textAlign: "right", fontSize: "0.95rem", color: "#cbd5e1" }}>
@@ -174,7 +176,8 @@ export const VisualDeckModal: React.FC<VisualDeckModalProps> = ({ deck, open, on
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
