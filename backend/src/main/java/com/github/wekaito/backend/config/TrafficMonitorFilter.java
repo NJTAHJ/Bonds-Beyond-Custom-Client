@@ -6,10 +6,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPOutputStream;
 
 @Component
 public class TrafficMonitorFilter implements Filter {
@@ -40,16 +42,39 @@ public class TrafficMonitorFilter implements Filter {
                 chain.doFilter(request, responseWrapper);
             } finally {
                 String uri = httpRequest.getRequestURI();
-                long bytes = responseWrapper.getContentSize();
+                byte[] content = responseWrapper.getContentAsByteArray();
+                long wireBytes = content.length;
+
+                String acceptEncoding = httpRequest.getHeader("Accept-Encoding");
+                String contentType = httpResponse.getContentType();
+
+                // Calculate actual Gzip compressed wire size for JSON, JS, CSS, and HTML responses
+                if (acceptEncoding != null && acceptEncoding.contains("gzip") && isCompressible(contentType) && content.length > 1024) {
+                    try {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        try (GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
+                            gzos.write(content);
+                        }
+                        wireBytes = baos.size();
+                    } catch (Exception ignored) {
+                        wireBytes = content.length;
+                    }
+                }
                 
                 statsMap.computeIfAbsent(uri, k -> new EndpointStat());
                 statsMap.get(uri).count.incrementAndGet();
-                statsMap.get(uri).totalBytes.addAndGet(bytes);
+                statsMap.get(uri).totalBytes.addAndGet(wireBytes);
                 
                 responseWrapper.copyBodyToResponse();
             }
         } else {
             chain.doFilter(request, response);
         }
+    }
+
+    private boolean isCompressible(String contentType) {
+        if (contentType == null) return true;
+        String ct = contentType.toLowerCase();
+        return ct.contains("json") || ct.contains("javascript") || ct.contains("text") || ct.contains("html") || ct.contains("css") || ct.contains("xml");
     }
 }
