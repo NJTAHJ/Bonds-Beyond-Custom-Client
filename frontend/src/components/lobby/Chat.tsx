@@ -4,6 +4,9 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { SendMessage } from "react-use-websocket";
 import { useGeneralStates } from "../../hooks/useGeneralStates.ts";
 import { useContextMenu } from "react-contexify";
+import useQuery from "../../hooks/useQuery.ts";
+import { notifyWarning, notifySuccess } from "../../utils/toasts.ts";
+import axios from "axios";
 
 export type ChatMessage = {
     id: string;
@@ -21,6 +24,7 @@ type Props = {
 
 export default function Chat({ sendMessage, messages, roomId }: Props) {
     const user = useGeneralStates((state) => state.user);
+    const { data: isAdmin } = useQuery<boolean>("/api/user/isAdmin");
 
     const [message, setMessage] = useState<string>("");
     const { show: showChatMessageMenu } = useContextMenu({ id: "chat-message-menu" });
@@ -57,10 +61,76 @@ export default function Chat({ sendMessage, messages, roomId }: Props) {
 
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!message.trim().length) return;
+        const trimmed = message.trim();
+        if (!trimmed.length) return;
 
-        if (roomId) sendMessage("/roomChatMessage:" + message + ":" + roomId);
-        else sendMessage("/chatMessage:" + message);
+        // --- ADMIN CHAT COMMAND INTERCEPTOR ---
+        if (trimmed.startsWith("/")) {
+            const parts = trimmed.slice(1).split(" ");
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1).join(" ");
+
+            if (command === "help" || command === "adminhelp") {
+                notifySuccess("Admin Commands: /announce <msg>, /kick <user>, /ban <user>, /clear");
+                setMessage("");
+                return;
+            }
+
+            if (!isAdmin) {
+                notifyWarning("You must be an Admin to use '/' chat commands.");
+                setMessage("");
+                return;
+            }
+
+            switch (command) {
+                case "announce":
+                case "broadcast":
+                    if (!args) {
+                        notifyWarning("Usage: /announce <message>");
+                        return;
+                    }
+                    sendMessage(`/globalChat:📢 【ANNOUNCEMENT】 ${args}`);
+                    notifySuccess("Broadcast sent to server!");
+                    break;
+
+                case "kick":
+                    if (!args) {
+                        notifyWarning("Usage: /kick <username>");
+                        return;
+                    }
+                    if (roomId) {
+                        sendMessage(`/kick:${roomId}:${args}`);
+                        notifySuccess(`Kicked ${args} from room.`);
+                    } else {
+                        notifyWarning("The /kick command can only be used inside a room.");
+                    }
+                    break;
+
+                case "ban":
+                    if (!args) {
+                        notifyWarning("Usage: /ban <username>");
+                        return;
+                    }
+                    axios.post(`/api/admin/ban/${args}`)
+                        .then(() => notifySuccess(`Successfully banned user '${args}'!`))
+                        .catch(() => notifyWarning(`Failed to ban '${args}'. User not found.`));
+                    break;
+
+                case "clear":
+                    notifySuccess("Type /clear to refresh local messages.");
+                    break;
+
+                default:
+                    notifyWarning(`Unknown command '/${command}'. Type /help for list.`);
+                    break;
+            }
+            setMessage("");
+            return;
+        }
+
+        // --- NORMAL CHAT MESSAGES ---
+        if (roomId) sendMessage("/roomChatMessage:" + trimmed + ":" + roomId);
+        else sendMessage("/chatMessage:" + trimmed);
         setMessage("");
     }
 
